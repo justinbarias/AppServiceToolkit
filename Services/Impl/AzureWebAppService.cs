@@ -61,11 +61,12 @@ namespace MSFT.AppServiceToolkit
 
         private async Task<InstanceProcessPair> getInstanceProcessPair(string resourceGroupName, string webAppName, string serverName)
         {
+            _logger.LogInformation($"Getting instances list");
             var getInstanceId = await _client.WebApps.Inner.ListInstanceIdentifiersAsync(resourceGroupName, webAppName);
-            _logger.LogInformation($"Retrieving process list");
             var instanceProcessObject = await getInstanceId.Select(
                 async (instance) =>
                 {
+                    _logger.LogInformation($"Retrieving process list for instance {instance.Name}");
                     var processList = await _client.WebApps.Inner.ListInstanceProcessesAsync(resourceGroupName, webAppName, instance.Name);
                     var processId = processList.Where(p =>
                     {
@@ -75,27 +76,31 @@ namespace MSFT.AppServiceToolkit
                         Task.WaitAll(processDetail);
                         var isScmSite = processDetail.Result.IsScmSite ?? false;
                         return (!isScmSite && processDetail.Result.FileName.Contains("w3wp") && processDetail.Result.EnvironmentVariables["COMPUTERNAME"] == serverName);
-
                     }
 
 
                     ).FirstOrDefault()?.Id;
-
-                    var pidTokens = processId.Split('/');
-                    var pidActual = pidTokens.ElementAt(pidTokens.Length - 1);
-                    if (pidActual == null)
-                    {
-                        _logger.LogInformation($"Not valid instance for instance {instance.Name} for serverName {serverName}");
-                        return null;
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Found process {pidActual} w3wp for instance {instance.Name} with serverName {serverName}");
-                        return new InstanceProcessPair
+                    if(processId != null){
+                        var pidTokens = processId.Split('/');
+                        var pidActual = pidTokens.ElementAt(pidTokens.Length - 1);
+                        if (pidActual == null)
                         {
-                            instanceId = instance.Name,
-                            processId = pidActual
-                        };
+                            _logger.LogInformation($"Not valid instance for instance {instance.Name} for serverName {serverName}");
+                            return null;
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"Found process {pidActual} w3wp for instance {instance.Name} with serverName {serverName}");
+                            return new InstanceProcessPair
+                            {
+                                instanceId = instance.Name,
+                                processId = pidActual
+                            };
+                        }
+                    }
+                    else {
+                        _logger.LogInformation($"Not process found for instance {instance.Name} for serverName {serverName}");
+                        return null;
                     }
                 }
                 ).Where(instance => instance != null).FirstOrDefault();
