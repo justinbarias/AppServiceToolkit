@@ -65,7 +65,7 @@ namespace MSFT.AppServiceToolkit
             var getInstanceId = await _client.WebApps.Inner.ListInstanceIdentifiersAsync(resourceGroupName, webAppName);
             _logger.LogInformation($"Found {getInstanceId.Count()} instances");
 
-            var instanceProcessObject = await getInstanceId.Select(
+            var instanceProcessObject = getInstanceId.Select(
                 async (instance) =>
                 {
                     _logger.LogInformation($"Retrieving process list for instance {instance.Name}");
@@ -106,9 +106,9 @@ namespace MSFT.AppServiceToolkit
                         return null;
                     }
                 }
-                ).Where(instance => instance != null).FirstOrDefault();
+            ).Where(ipo => ipo.Result != null).FirstOrDefault();
 
-            return instanceProcessObject;
+            return instanceProcessObject.Result;
         }
 
         public async Task<string> GenerateProcessInstanceDump(string resourceGroupName, string webAppName, string serverName, string sasUrl)
