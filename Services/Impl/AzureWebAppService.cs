@@ -63,6 +63,8 @@ namespace MSFT.AppServiceToolkit
         {
             _logger.LogInformation($"Getting instances list");
             var getInstanceId = await _client.WebApps.Inner.ListInstanceIdentifiersAsync(resourceGroupName, webAppName);
+            _logger.LogInformation($"Found {getInstanceId.Count()} instances");
+
             var instanceProcessObject = await getInstanceId.Select(
                 async (instance) =>
                 {
@@ -80,6 +82,7 @@ namespace MSFT.AppServiceToolkit
 
 
                     ).FirstOrDefault()?.Id;
+
                     if(processId != null){
                         var pidTokens = processId.Split('/');
                         var pidActual = pidTokens.ElementAt(pidTokens.Length - 1);
