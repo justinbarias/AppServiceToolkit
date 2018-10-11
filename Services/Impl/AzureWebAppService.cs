@@ -77,7 +77,8 @@ namespace MSFT.AppServiceToolkit
                         var processDetail = _client.WebApps.Inner.GetInstanceProcessAsync(resourceGroupName, webAppName, pid, instance.Name);
                         Task.WaitAll(processDetail);
                         var isScmSite = processDetail.Result.IsScmSite ?? false;
-                        var computerName = processDetail.Result.EnvironmentVariables["COMPUTERNAME"] ?? "invalid";
+                        //if COMPUTERNAME exists return actual process computername, else return invalid
+                        var computerName = processDetail.Result.EnvironmentVariables.ContainsKey("COMPUTERNAME") ? processDetail.Result.EnvironmentVariables["COMPUTERNAME"] : "invalid";
                         return (!isScmSite && processDetail.Result.FileName.Contains("w3wp") && computerName == serverName);
                     }
 
