@@ -70,6 +70,7 @@ namespace MSFT.AppServiceToolkit
                 {
                     _logger.LogInformation($"Retrieving process list for instance {instance.Name}");
                     var processList = await _client.WebApps.Inner.ListInstanceProcessesAsync(resourceGroupName, webAppName, instance.Name);
+                    _logger.LogInformation($"Retrieved {processList.Count()} processes from {instance.Name}");
                     var processId = processList.Where(p =>
                     {
                         var tokens = p.Name.Split('/');
@@ -79,6 +80,7 @@ namespace MSFT.AppServiceToolkit
                         var isScmSite = processDetail.Result.IsScmSite ?? false;
                         //if COMPUTERNAME exists return actual process computername, else return invalid
                         var computerName = processDetail.Result.EnvironmentVariables.ContainsKey("COMPUTERNAME") ? processDetail.Result.EnvironmentVariables["COMPUTERNAME"] : "invalid";
+                        _logger.LogInformation($"List of Environment Variables: {processDetail.Result.EnvironmentVariables.Keys}");
                         return (!isScmSite && processDetail.Result.FileName.Contains("w3wp") && computerName == serverName);
                     }
 
