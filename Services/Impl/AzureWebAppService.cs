@@ -70,7 +70,7 @@ namespace MSFT.AppServiceToolkit
                 {
                     _logger.LogInformation($"Retrieving process list for instance {instance.Name}");
                     var processList = await _client.WebApps.Inner.ListInstanceProcessesAsync(resourceGroupName, webAppName, instance.Name);
-                    _logger.LogInformation($"Retrieved {processList.Count()} processes from {instance.Name}");
+                    
                     var processId = processList.Where(p =>
                     {
                         var tokens = p.Name.Split('/');
@@ -78,6 +78,7 @@ namespace MSFT.AppServiceToolkit
                         _logger.LogInformation($"PID = {pid}");
                         var processDetail = _client.WebApps.Inner.GetInstanceProcessAsync(resourceGroupName, webAppName, pid, instance.Name);
                         Task.WaitAll(processDetail);
+                        _logger.LogInformation($"Retrieved {processDetail.Result.Name} with filename {processDetail.Result.FileName}");
                         var isScmSite = processDetail.Result.IsScmSite ?? false;
                         //if COMPUTERNAME exists return actual process computername, else return invalid
                         var computerName = processDetail.Result.EnvironmentVariables.ContainsKey("COMPUTERNAME") ? processDetail.Result.EnvironmentVariables["COMPUTERNAME"] : "invalid";
