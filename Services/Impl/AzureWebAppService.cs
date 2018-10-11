@@ -80,7 +80,10 @@ namespace MSFT.AppServiceToolkit
                         var isScmSite = processDetail.Result.IsScmSite ?? false;
                         //if COMPUTERNAME exists return actual process computername, else return invalid
                         var computerName = processDetail.Result.EnvironmentVariables.ContainsKey("COMPUTERNAME") ? processDetail.Result.EnvironmentVariables["COMPUTERNAME"] : "invalid";
-                        _logger.LogInformation($"List of Environment Variables: {processDetail.Result.EnvironmentVariables.Keys.ToString()}");
+                       foreach(var key in processDetail.Result.EnvironmentVariables.Keys) {
+                           _logger.LogInformation($"List of Environment Variables: {key}");
+                       }
+                        
                         return (!isScmSite && processDetail.Result.FileName.Contains("w3wp") && computerName == serverName);
                     }
 
