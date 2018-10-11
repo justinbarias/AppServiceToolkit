@@ -75,6 +75,7 @@ namespace MSFT.AppServiceToolkit
                     {
                         var tokens = p.Name.Split('/');
                         var pid = tokens.ElementAt(tokens.Length - 1);
+                        _logger.LogInformation($"PID = {pid}");
                         var processDetail = _client.WebApps.Inner.GetInstanceProcessAsync(resourceGroupName, webAppName, pid, instance.Name);
                         Task.WaitAll(processDetail);
                         var isScmSite = processDetail.Result.IsScmSite ?? false;
