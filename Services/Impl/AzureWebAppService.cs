@@ -31,10 +31,21 @@ namespace MSFT.AppServiceToolkit
             this._blobClient = blobClient;
         }
 
+        public async Task<bool> KillAppServiceForInstanceId(string resourceGroupName, string webAppName, string instanceId) {
+          
+            var processId = await getProcessForInstanceId(resourceGroupName, webAppName, instanceId);
+
+            var tokens = processId.Split('/');
+            var pid = tokens.ElementAt(tokens.Length - 1);
+            _logger.LogInformation($"Deleting process instance {instanceId} for instance {pid}");
+            var task = await _client.WebApps.Manager.WebApps.Inner.DeleteInstanceProcessWithHttpMessagesAsync(resourceGroupName, webAppName, pid, instanceId);
+
+
+            return true;
+        }
+
         public async Task<bool> KillAppServiceProcess(string resourceGroupName, string webAppName, string serverName)
         {
-
-
             var validResult = await getInstanceProcessPair(resourceGroupName, webAppName, serverName);
             if (validResult != null)
             {
@@ -57,6 +68,33 @@ namespace MSFT.AppServiceToolkit
         {
             public string instanceId;
             public string processId;
+        }
+
+        private async Task<String> getProcessForInstanceId(string resourceGroupName, string webAppName, string instanceId){
+            _logger.LogInformation($"Getting processes for instance {instanceId}");
+
+            var processses = await _client.WebApps.Inner.ListInstanceProcessesAsync(resourceGroupName, webAppName, instanceId);
+            if(processses != null){
+                _logger.LogInformation($"Retrieved processes for instance {instanceId}");
+                var processId = processses.Where(
+                    p =>
+                    {
+                        var tokens = p.Name.Split('/');
+                        var pid = tokens.ElementAt(tokens.Length - 1);
+                        _logger.LogInformation($"PID = {pid}");
+                        var processDetail = _client.WebApps.Inner.GetInstanceProcessAsync(resourceGroupName, webAppName, pid, instanceId);
+                        Task.WaitAll(processDetail);
+                        var isScmSite = processDetail.Result.IsScmSite ?? false;
+                        return processDetail.Result.FileName.Contains("w3wp") && !isScmSite;
+                    }
+                );
+                return processId.FirstOrDefault()?.Id;
+            }
+            else {
+                _logger.LogError($"Couldn't retrieve processes for {instanceId}");
+                throw new Exception($"Couldn't retrieve processes for {instanceId}");
+            }
+
         }
 
         private async Task<InstanceProcessPair> getInstanceProcessPair(string resourceGroupName, string webAppName, string serverName)
@@ -155,9 +193,8 @@ namespace MSFT.AppServiceToolkit
         {
             try
             {
-                var task = await _client.WebApps.Inner.StartWebSiteNetworkTraceAsync(resourceGroupName, webAppName);
-
-                return task;
+                var task = await _client.WebApps.Inner.StartWebSiteNetworkTraceWithHttpMessagesAsync(resourceGroupName, webAppName);
+                return task.Response.StatusCode.ToString();
             }
             catch (Microsoft.Azure.Management.AppService.Fluent.Models.DefaultErrorResponseException e)
             {

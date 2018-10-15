@@ -11,6 +11,8 @@ namespace MSFT.AppServiceToolkit {
 
         Task<bool> KillAppServiceProcess(string resourceGroupName, string webAppName, string serverName);
 
+        Task<bool> KillAppServiceForInstanceId(string resourceGroupName, string webAppName, string instanceId);
+
         Task<string> GenerateProcessInstanceDump(string resourceGroupName, string webAppName, string serverName, string sasUrl);
 
         Task<string> StartNetworkTrace(string resourceGroupName, string webAppName, string serverName, string sasUrl);
